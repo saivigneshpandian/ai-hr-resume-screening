@@ -31,10 +31,10 @@ Results logged to Google Sheets
 ## Screenshots
 
 ### Website — Candidate Portal
-![HR Portal](Website_image.png)
+![HR Portal](screenshots/Website_image.png)
 
 ### n8n Workflow
-![n8n Workflow](screenshot.png)
+![n8n Workflow](screenshots/screenshot.png)
 
 ---
 
