@@ -1,0 +1,406 @@
+{
+  "name": "Hr_AI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hr-resume-upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        -64
+      ],
+      "id": "02c876db-e780-4032-8c97-5a5c599d878e",
+      "name": "Webhook",
+      "webhookId": "637642da-8117-4147-b666-3c57b4d84ae6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert HR assistant specialized in extracting and structuring information from resumes. Your task is to analyze resume text and extract key details accurately.\n\nWhen extracting information:\n- Be precise and extract exactly what's mentioned in the resume\n- For arrays (Work Experience, Internship, Projects, Certifications, Languages, Interests), include all items found\n- Use \"Not mentioned\" if a field is not present in the resume\n- Maintain professional formatting\n- Extract education details including institution name, degree, and years\n\nAlways return ONLY a valid JSON object with no additional text, code blocks, or markdown formatting.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=I have the following resume text:\n{{ $json.content.parts[0].text }}\n\nPlease extract the following fields and return ONLY a valid JSON object.\nDo not include any code, comments, markdown, or explanations.\nReturn exactly this structure, with values filled from the resume:\n\n{\n  \"Full_Name\": \"Full Name here\",\n  \"Phone\": \"Phone here\",\n  \"Email\": \"Email here\",\n  \"Education\": \"Education here\",\n  \"Skills\": \"Skills here\",\n  \"Work_Experience\": [\"WorkExperience1\", \"WorkExperience2\"],\n  \"Internship\": [\"Internship 1\", \"Internship 2\"],\n  \"Projects\": [\"Project 1\", \"Project 2\"],\n  \"Certifications\": [\"Certification1\", \"Certification2\"],\n  \"Languages\": [\"Language1\", \"Language2\"],\n  \"Interests\": [\"Interest1\", \"Interest2\"]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        16,
+        -80
+      ],
+      "id": "6c77c31e-a871-4ece-ac8e-14587e7f65e6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        176
+      ],
+      "id": "421ed13c-a273-482b-8ce0-a94626da9536",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MYxaE8Klll7pptuV",
+          "name": "use gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"Full_Name\": \"extracted name\",\n\"Phone\": \"extracted phone\",\n\"Email\": \"extracted email\",\n\"Education\": \"extracted education\",\n\"Skills\": \"extracted skills\",\n\"Work_Experience\": [\"experience1\", \"experience2\"],\n\"Internship\": [\"internship1\", \"internship2\"],\n\"Projects\": [\"project1\", \"project2\"],\n\"Certifications\": [\"cert1\", \"cert2\"],\n\"Languages\": [\"lang1\", \"lang2\"],\n\"Interests\": [\"interest1\", \"interest2\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        176
+      ],
+      "id": "f01b95fe-2c3b-4723-9e31-4826a1e332ac",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Act as Hr of XYZ company  with Several of experience and you task is to  choose the correct person for the job title.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=you are HR AI  assistant,\n\njob title:{{ $('Webhook').item.json.body.role }}\n\nDetail of the person:\n\n\"Full_Name\": {{ $json.output.Full_Name }},\n\"Phone\": {{ $json.output.Phone }},\n\"Email\": {{ $json.output.Email }},\n\"Education\": {{ $json.output.Education }},\n\"Skills\": {{ $json.output.Skills }},\n\"Work_Experience\": {{ $json.output.Work_Experience }},\n\"Internship\":{{ $json.output.Internship }} ,\n\"Projects\":{{ $json.output.Projects }} ,\n\"Certifications\": {{ $json.output.Certifications }},\n\"Languages\": {{ $json.output.Languages }},\n\"Interests\": {{ $json.output.Interests }}\n\n\nyour role :\n- Act like a professional recruiter,\n- Do strict evaluation\n- skills and roles are given based on that give mark\n- Defined scoring weights\n- Defined decision rules\n- Forced JSON output:\n   {\n  \"Name\":\"name here \",\n  \"Email id\":\"email id here\",\n  \"About\":\"summary or about here\",\n  \"Skill match\":\"skill score here\",\n  \"Experience\":\"experience score here\",\n  \"Bonus\":\"bonous score here\",\n  \"Total score\":\"total score here\",\n  \"Status\":\"status here\"\n  }\nexplanation:\nName:\"this will contain the name of the person \",\nEmail id :\"this will contain the email id\",\nAbout:\"this will contain the summary or about him (why do we choose him and make it shortly )\",\nSkill match:\"this will contain the  score of the person which match with their skills\",\nExperience:\"this contains the expereince of the person\",\nBonus:\"this contains the bonus score \",\nTotal score:\"total score what they got\",\nStatus:\"this tell the person is Rejected , Hold, Shortlisted\"\n\n\nskills and roles:\nFull Stack Developer – Required Skills:\n- HTML, CSS, JavaScript\n- React.js\n- Node.js\n- REST APIs\n- SQL / MongoDB\n- Git\n- Basic System Design\n\n\nAI Automation Engineer:\n- Python\n- n8n\n- REST APIs\n- OpenAI\n- Workflow Automation\n\nML Engineer:\n- Python\n- Machine Learning\n- TensorFlow\n- Data Preprocessing\n- Model Evaluation\n\nyou need to check these and rate resume:\nScoring Rules:\n- Skill match: 0–60\n- Experience: 0–30\n- Bonus (projects/tools/certifications): 0–10\n- Total score: max 100\nExperience rules :\nIf experience is fresher or internship-based:\n- Give 5-10 experience score\nIf 1–2 years:\n- Give 20–25\nIf 3+ years:\n- Give 30\n\nDecision Rules:\n- Total score >= 80 → Shortlist\n- Total score is between 60–79 → Hold\n- Total score < 60 → Reject"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        368,
+        -80
+      ],
+      "id": "89a0d5f1-cbae-4604-b3ea-d7d0b06c1e43",
+      "name": "HR AI"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        128
+      ],
+      "id": "a71b2d27-015e-4163-9152-7f249d020aa4",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MYxaE8Klll7pptuV",
+          "name": "use gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"name\": \"string\",\n  \"email\": \"string\",\n  \"about\": \"string\",\n  \"skill_match_score\": \"number\",\n  \"experience_score\": \"number\",\n  \"bonus_score\": \"number\",\n  \"total_score\": \"number\",\n  \"status\": \"string\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        128
+      ],
+      "id": "d64444c3-459a-4c03-b23b-5a9136158665",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Extract the following from this resume:\n1. Full Name\n2. Email\n3. Phone\n4. Education\n5. Skills\n6. Work Experience\n7. Projects\n8. Other relevant info\n",
+        "inputType": "binary",
+        "binaryPropertyName": "resume",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -64
+      ],
+      "id": "20bbf434-bc5f-4967-8186-27d8301490fe",
+      "name": "Analyze document1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MYxaE8Klll7pptuV",
+          "name": "use gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "YOUR_CREDENTIAL_ID",
+          "__regex": "https:\\/\\/(?:drive|docs)\\.google\\.com(?:\\/.*|)\\/d\\/([0-9a-zA-Z\\-_]+)(?:\\/.*|)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nIb2PblptYkNnBkfN9rxTAnt5frsILbP5qE2KCtQMMU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email id": "={{ $json.output.email }}",
+            "Name": "={{ $json.output.name }}",
+            "Status": "={{ $json.output.status }}",
+            "Total_Score": "={{ $json.output.total_score }}",
+            "Bonus_Score": "={{ $json.output.bonus_score }}",
+            "Skill_Match_Score": "={{ $json.output.skill_match_score }}",
+            "Experience_Score": "={{ $json.output.experience_score }}",
+            "About": "={{ $json.output.about }}",
+            "Job ": "={{ $('Webhook').item.json.body.role }}"
+          },
+          "matchingColumns": [
+            "Email id"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email id",
+              "displayName": "Email id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job ",
+              "displayName": "Job ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "About",
+              "displayName": "About",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Skill_Match_Score",
+              "displayName": "Skill_Match_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Experience_Score",
+              "displayName": "Experience_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bonus_Score",
+              "displayName": "Bonus_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total_Score",
+              "displayName": "Total_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        -96
+      ],
+      "id": "5d17257f-5b1e-4d9c-afd3-ffb82f094018",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1e5iqlhS2wORMgML",
+          "name": "use this"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Analyze document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HR AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "HR AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "HR AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HR AI": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3d97ed52-6f6a-4d9a-ad5f-a965f4fb093b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf536de71349f522d5c6970e9df944a3ea69ea5a5c0432d808c0ed67783306c4"
+  },
+  "id": "CTatdhLjcbggG9AI",
+  "tags": []
+}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"d:/PROJECT/ai-email-agent-system/workflows/\")",
+      "Read(//d/PROJECT/ai-email-agent-system/workflows/**)"
+    ]
+  }
+}
